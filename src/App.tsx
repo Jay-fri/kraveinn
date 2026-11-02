@@ -6,9 +6,14 @@ import cartIcon from "./assets/cart.svg";
 import heroBurger from "./assets/hero-burger.png";
 import pizzaThursday from "./assets/pizza-thursday.png";
 import classicCombo from "./assets/classic-combo.png";
+import MenuPage from "./pages/MenuPage";
+import CartPage from "./pages/CartPage";
 import emptyCartIcon from "./assets/empty-cart.svg";
 import clearCartBin from "./assets/clear-cart-bin.svg";
 import cartClearButton from "./assets/cart-clear-button.svg";
+import Navbar from "./components/Navbar";
+import Footer from "./components/Footer";
+import SearchPage from "./pages/SearchPage";
 
 const Icon = ({
   children,
@@ -113,12 +118,14 @@ function Brand({ footer = false }: { footer?: boolean }) {
 function Button({
   children,
   className = "",
+  onClick,
 }: {
   children: ReactNode;
   className?: string;
+  onClick?: () => void;
 }) {
   return (
-    <button className={`pill-button ${className}`}>
+    <button className={`pill-button ${className}`} onClick={onClick}>
       {children}
       <span className="arrow-circle">
         <Arrow />
@@ -163,101 +170,15 @@ function SectionTitle({ children }: { children: ReactNode }) {
   );
 }
 
-type CartEntry = {
-  id: string;
-  name: string;
-  label: string;
-  price: number;
-  image?: string;
-  coke?: boolean;
-  quantity: number;
-};
-
-const initialCart: CartEntry[] = [
-  { id: "burger", name: "Classic Chicken Burger", label: "Regular", price: 4500, image: products[0].image, quantity: 1 },
-  { id: "fries", name: "French Fries", label: "Extras", price: 1500, image: categories[2][1], quantity: 1 },
-  { id: "coke", name: "500ml Coca Cola", label: "Extras", price: 1000, coke: true, quantity: 1 },
-];
-
-const naira = (value: number) => `₦${value.toLocaleString("en-NG")}`;
-
-function CartPage({ onBack }: { onBack: () => void }) {
-  const [items, setItems] = useState(initialCart);
-  const [confirmClear, setConfirmClear] = useState(false);
-  const subtotal = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
-  const delivery = items.length ? 2000 : 0;
-
-  const changeQuantity = (id: string, amount: number) => {
-    setItems((current) => current.flatMap((item) => {
-      if (item.id !== id) return [item];
-      const quantity = item.quantity + amount;
-      return quantity > 0 ? [{ ...item, quantity }] : [];
-    }));
-  };
-
-  return (
-    <main className="site-shell cart-page">
-      <header className="cart-topbar">
-        <button className="cart-nav-button" onClick={onBack} aria-label="Back to menu"><Back /></button>
-        <h1>My Cart</h1>
-        {items.length > 0 ? <button className="cart-nav-button cart-clear-button" onClick={() => setConfirmClear(true)} aria-label="Clear cart"><img src={cartClearButton} alt="" /></button> : <span />}
-      </header>
-
-      {items.length === 0 ? (
-        <section className="cart-empty">
-          <img src={emptyCartIcon} alt="Empty shopping cart" />
-          <h2>Add items to start a cart</h2>
-          <p>Once you add items from the menu,<br />your cart will appear here.</p>
-          <button onClick={onBack}>Explore Menu</button>
-        </section>
-      ) : (
-        <section className="cart-content">
-          <div className="cart-items">
-            {items.map((item) => <article className="cart-item" key={item.id}>
-              {item.coke ? <span className="coke-can">Coke</span> : <img src={item.image} alt="" />}
-              <div className="cart-item-copy"><h2>{item.name}</h2><p>{item.label}</p><strong>{naira(item.price)}</strong></div>
-              <div className="quantity"><button onClick={() => changeQuantity(item.id, -1)} aria-label={`Reduce ${item.name}`}>−</button><span>{item.quantity}</span><button onClick={() => changeQuantity(item.id, 1)} aria-label={`Increase ${item.name}`}>+</button></div>
-            </article>)}
-          </div>
-          <div className="promo-code"><span><Coupon /> Promo code</span><button>Apply</button></div>
-          <div className="order-summary"><div><span>Subtotal</span><strong>{naira(subtotal)}</strong></div><div><span>Delivery</span><strong>{naira(delivery)}</strong></div><div className="summary-total"><span>Total</span><strong>{naira(subtotal + delivery)}</strong></div></div>
-          <button className="checkout-button">Checkout • {naira(subtotal + delivery)}</button>
-        </section>
-      )}
-
-      {confirmClear && <div className="cart-modal-layer" role="dialog" aria-modal="true" aria-labelledby="clear-cart-title">
-        <div className="clear-cart-modal">
-          <img className="clear-cart-bin" src={clearCartBin} alt="Trash bin" />
-          <button className="modal-close" onClick={() => setConfirmClear(false)} aria-label="Close confirmation">×</button>
-          <h2 id="clear-cart-title">Are you sure?</h2>
-          <p>You’re about to clear your cart.<br />This action will remove all items<br />from your cart.</p>
-          <div><button className="cancel-clear" onClick={() => setConfirmClear(false)}>Cancel</button><button className="confirm-clear" onClick={() => { setItems([]); setConfirmClear(false); }}>Clear Cart</button></div>
-        </div>
-      </div>}
-    </main>
-  );
-}
-
 function App() {
-  const [showCart, setShowCart] = useState(false);
-  if (showCart) return <CartPage onBack={() => setShowCart(false)} />;
+  const [page, setPage] = useState<'home' | 'menu' | 'cart' | 'search'>('home');
+  const showCart = page === 'cart';
+  if (showCart) return <CartPage onBack={() => setPage('home')} />;
+  if (page === 'menu') return <MenuPage onCart={() => setPage('cart')} onSearch={() => setPage('search')} />;
+  if (page === 'search') return <SearchPage onCart={() => setPage('cart')} onSearch={() => setPage('search')} onMenu={() => setPage('menu')} />;
   return (
     <main className="site-shell">
-      <header className="topbar">
-        <button className="header-icon" aria-label="Open menu">
-          <Menu />
-        </button>
-        <Brand />
-        <div className="header-actions">
-          <button className="header-icon" aria-label="Search">
-            <Search />
-          </button>
-          <button className="header-icon bag" onClick={() => setShowCart(true)} aria-label="Basket">
-            <Bag />
-            <em>3</em>
-          </button>
-        </div>
-      </header>
+      <Navbar onCart={() => setPage('cart')} onSearch={() => setPage('search')} cartCount={3} />
 
       <section className="hero-banner">
         <img
@@ -273,7 +194,7 @@ function App() {
             <b>CRAVINGS.</b>
           </h1>
           <p>Freshly made, always delicious.</p>
-          <Button>Explore Menu</Button>
+          <Button onClick={() => setPage('menu')}>Explore Menu</Button>
         </div>
         <div className="slider-dots">
           <i className="active" />
@@ -347,55 +268,7 @@ function App() {
         </div>
       </section>
 
-      <footer>
-        <div className="footer-brand">
-          <Brand footer />
-          <p>
-            Good food, tasty treats, and refreshing drinks to
-            <br />
-            always satisfy your cravings.
-          </p>
-          <div className="socials">
-            <a href="#" aria-label="TikTok">
-              <TikTok />
-            </a>
-            <a href="#" aria-label="Instagram">
-              <Instagram />
-            </a>
-            <a href="#" aria-label="Email">
-              <Mail />
-            </a>
-            <a href="#" aria-label="WhatsApp">
-              <WhatsApp />
-            </a>
-          </div>
-        </div>
-        <div className="footer-links">
-          <div>
-            <h3>Links</h3>
-            <a href="#">Home</a>
-            <a href="#">Our Menu</a>
-            <a href="#">Orders</a>
-            <a href="#">Track Order</a>
-          </div>
-          <div>
-            <h3>Support</h3>
-            <a href="#">Contact Us</a>
-            <a href="#">FAQs</a>
-            <a href="#">Delivery Info</a>
-            <a href="#">Help</a>
-          </div>
-        </div>
-        <div className="legal">
-          <h3>Legal</h3>
-          <div>
-            <a href="#">Privacy Policy</a>
-            <a href="#">Terms &amp; Conditions</a>
-            <a href="#">Refund Policy</a>
-          </div>
-        </div>
-        <div className="copyright">©2026 KraveInn. All rights reserved.</div>
-      </footer>
+      <Footer />
     </main>
   );
 }
