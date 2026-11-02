@@ -14,6 +14,7 @@ import cartClearButton from "./assets/cart-clear-button.svg";
 import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
 import SearchPage from "./pages/SearchPage";
+import CheckoutPage from "./pages/CheckoutPage";
 
 const Icon = ({
   children,
@@ -171,9 +172,10 @@ function SectionTitle({ children }: { children: ReactNode }) {
 }
 
 function App() {
-  const [page, setPage] = useState<'home' | 'menu' | 'cart' | 'search'>('home');
+  const [page, setPage] = useState<'home' | 'menu' | 'cart' | 'search' | 'checkout'>('home');
   const showCart = page === 'cart';
-  if (showCart) return <CartPage onBack={() => setPage('home')} />;
+  if (showCart) return <CartPage onBack={() => setPage('home')} onCheckout={() => setPage('checkout')} />;
+  if (page === 'checkout') return <CheckoutPage onBack={() => setPage('cart')} onCart={() => setPage('cart')} />;
   if (page === 'menu') return <MenuPage onCart={() => setPage('cart')} onSearch={() => setPage('search')} />;
   if (page === 'search') return <SearchPage onCart={() => setPage('cart')} onSearch={() => setPage('search')} onMenu={() => setPage('menu')} />;
   return (
